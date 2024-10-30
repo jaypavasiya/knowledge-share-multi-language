@@ -1,0 +1,1646 @@
+$rows: 4 !global;
+$columns: 12 !global;
+$gameObjects: 22;
+$tileSize: 48px;
+$walkSpeed: 1s;
+$tilesPerSegment: 3;
+$tilesPerSegmentVertical: 7;
+$segmentHeight: $tileSize * $tilesPerSegmentVertical;
+$debug: false;
+
+* {
+    box-sizing: border-box;
+}
+
+@font-face {
+    font-family: pixles;
+    src: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/217233/04B_03__.TTF);
+}
+
+/* ------------------------------------------------------------------------------------
+
+Game styling
+
+--------------------------------------------------------------------------------------- */
+
+body {
+    background: #141415;
+    overflow: hidden;
+    font-family: pixles;
+    font-size: 15px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+    height: 100vh;
+    margin: 0;
+
+    & .game {
+        width: $tileSize * $tilesPerSegment * $columns;
+        position: absolute;
+        left: calc(50% - 72px);
+        right: 0;
+        top: calc(50% - 212px);
+        margin: auto;
+        
+        input {
+            display: none;
+        }
+        
+        // End screen styles
+        
+        &_win {
+            position: fixed;
+            left: 0;
+            top: 0;
+            background: #141415;
+            z-index: 9;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 1s 0s;
+            
+            &__inner {
+                position: absolute;
+                left: 0;
+                right: 0;
+                margin: auto;
+                width: 300px;
+                top: 50%;
+                transform: translateY(-50%);
+                text-align: center;
+                opacity: 0;
+                transition: all 1s 2s;
+                
+                p {    
+                    color: white;
+                    margin-bottom: 30px;
+                }
+                
+                span {
+                    color: white;
+                    opacity: 0.4;
+                }
+                
+                a {
+                    margin-bottom: 16px;
+                    color: #78f148;
+                    text-align: center;
+                    width: 100%;
+                    display: block;
+                }
+            }
+            
+            .character {
+                width: 48px;
+                height: 48px;
+                position: relative;
+                left: -60px;
+                margin: auto;
+                background: red;
+                background: url('https://s3-us-west-2.amazonaws.com/s.cdpn.io/217233/corridorMainCharacter.gif');
+                animation: walk-1 $walkSpeed infinite;
+                z-index: 1;
+                background-position: 0 0;
+                transform: translateY(-50%) translateX($tileSize * ($tilesPerSegment / 2) - 8);
+                transition: all $walkSpeed linear;
+                z-index: 1;
+                pointer-events: none;
+            }
+        }
+        
+        // Side inventory styles
+
+        &_inventory {
+            position: fixed;
+            z-index: 9;
+            left: 0;
+            color: white;
+            top: 50%;
+            -webkit-transform: translateY(-50%);
+            font-size: 11px;
+            right: 0;
+            margin: auto;
+            left: -420px;
+            width: 140px;
+            padding-left: 15px;
+            transform: translateY(-50%);
+            height: 64px;
+            cursor: pointer;
+            transition: all .6s .3s;
+
+            &:hover {
+                height: 371px;
+                transition: all .6s .2s;
+
+                .item {
+                    opacity: 1;
+                    left: 0px;
+                    transition: all 0.3s;
+                    -webkit-filter: blur(0px);
+
+                    &:first-child {
+                        display: block;
+                    }
+                }
+            }
+
+            h1 {
+                font-weight: normal;
+                font-size: 12px;
+            }
+
+            img {
+                transform: scale(3);
+                image-rendering: pixelated;
+                cursor: pointer;
+                transform-origin: 0 0;
+
+                &:hover {
+
+                }
+            }
+
+            &__item {
+                margin-top: 70px;
+                text-align: center;
+                position: relative;
+                left: -24px;
+                width: 100%;
+                height: 100%;
+
+                .item {
+                    margin: 10px 0 30px 0;
+                    display: none;
+                    opacity: 0;
+                    left: 0px;
+                    position: relative;
+                    transition: all 0s;
+                    float: left;
+                    margin-right: 10px;
+                    width: 34%;
+
+                    &:hover {
+                        z-index: 15;
+                        
+                        .details {
+                            opacity: 1;
+                            top: -4px;
+                        }
+                    }
+                    
+                    .name {
+                        position: relative;
+                        top: 11px;
+                    }
+                    
+                    .details {
+                        padding: 7px;
+                        opacity: 0;
+                        border-radius: 4px;
+                        position: absolute;
+                        font-size: 13px;
+                        text-align: center;
+                        transition: all 0.2s .2s;
+                        pointer-events: none;
+                        background: white;
+                        color: #141415;
+                        width: 120px;
+                        top: -4px;
+                        left: 50px;
+                        z-index: 20;
+                    }
+
+                    img {
+                        transform: scale(2);
+                        transform-origin: 50% 50%;
+                    }
+                }
+            }
+        }
+
+        // Padlock stuff
+        
+        .padlock {
+            display: none;    
+            position: absolute;
+            width: 280px;
+            top: 71px;
+            left: -70px;
+            height: 280px;
+            background: #301f41b8;
+            z-index: 4;
+            border-radius: 324px;
+            border: 4px solid #ffb128;
+            
+            img {
+                position: absolute;
+                left: 80px;
+                top: 35px;
+            }
+        }
+        
+        %o {
+            display:block;
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 220px;
+            margin: auto;
+        }
+
+        .check {
+            display: none;
+            width: 80px;
+            cursor: pointer;
+            height: 80px;
+            position: absolute;
+            z-index: 6;
+            top: 303px;
+            left: 30px;
+            text-align: center;
+            line-height: 77px;
+            background: wheat;
+            color: #615133;
+            border-radius: 100px;
+            border: 3px solid #ffb128;
+            transition: all 0.3s;
+
+            &:hover {
+                background: #ffb128;
+                color: white;
+            }
+        }
+        
+        input#interactiveObject--lock:not(:checked) {
+            + span {
+                display: none;
+            }
+        }
+        
+        input#interactiveObject--lock:checked {
+            + .padlock {
+                display: block;
+
+                $y: '';
+                $x: ' + span ';
+                
+                + input {
+                    display: block;
+                    @for $i from 1 through 26 {
+
+                        $y: $y + ' + span + input';
+                        $x: $x + ' + input + span ';
+                            
+                        #{$y} {
+                            display: block;
+                        }
+                            #{$x} {
+                            display: block;
+                        }
+                        #{$y} + span + label {
+                            display: block;
+                        }   
+                    }
+                }
+            }
+        }
+
+        #padlock1-1,#padlock2-1,#padlock3-1 {
+            &:after {
+                display: block !important;
+            }
+        }
+
+        #padlock1-9,#padlock2-9,#padlock3-9 {
+            &:after {
+                display: none !important;
+            }
+        }
+        
+        input[id*="padlock"] {
+            @extend %o;
+
+            z-index: 3;
+            outline: none;
+            display:none;
+            -webkit-appearance: none;
+
+            + span {
+                @extend %o;
+
+                background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/217233/padlockBG.png);
+                width: 10px;
+                width: 22px;
+                height: 36px;
+                left: 0;
+                display: none;
+                line-height: 40px;
+                text-align: center;
+                position: fixed;
+                color: #444444;
+                top: 50%;
+                transform: translateY(9px) translateX(-35px);
+            }
+
+            @for $i from 1 through 34 {
+                &:nth-of-type(#{$i}) {
+                    z-index: $i + 10;
+
+                    &:checked {
+                        z-index: 64 + $i;
+                        
+                        & + span {
+                            z-index: 64 - $i;
+                        }
+                    }
+                }
+            }
+
+            &:checked {
+                z-index: 30;
+
+                &:before {
+                    display: none;
+                } 
+
+                & + span {
+                    & + input {
+                        &:after {
+                            display: none;
+                        }
+                    }
+                }
+            }
+
+            &:after {
+                background: red;
+                display: block;
+                content: '';
+                top: 48px;
+                position: absolute;
+                cursor: pointer;
+                height: 23px;
+                left: -7px;
+                width: 22px;
+                background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/217233/padlockDown.png);
+            }
+
+            &:before {
+                display: block;
+                content: '';
+                position: absolute;
+                height: 23px;
+                width: 22px;
+                left: -7px;
+                top: -30px;
+                color: white;
+                background: red;
+                cursor: pointer;
+                background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/217233/padlockUp.png);
+            }
+
+            &[id*="padlock1"] {
+                left: 19px;
+                + span {
+                  left: -27px;  
+                }
+            }
+            
+            &[id*="padlock2"] {
+                left: 64px;
+                + span {
+                  left: 66px;  
+                }
+            }
+            
+            &[id*="padlock3"] {
+                left: 106px;
+                + span {
+                  left: 149px;  
+                }
+            }
+        }
+        
+        // Loading screen styles
+
+        &_loader {
+            position: fixed;
+            z-index: 15;
+            background: #141415;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 1;
+            animation: fadeOut 1.5s 7s forwards;
+
+            &__inner {
+                position: absolute;
+                left: 0;
+                right: 0;
+                margin: auto;
+                top: 50%;
+                transform: translateY(-50%);
+                font-size: 12px;
+                width: 200px;
+                text-align: center;
+
+                h1 {
+                    font-weight: normal;
+                    font-size: 12px;
+                }
+
+                & .logo {
+                    width: 200px;
+                    height: 70px;
+                    margin: auto;
+                    margin-bottom: 10px;
+                    transform: scale(0);
+                    opacity: 0;
+                    animation: logo 2s forwards;
+                    
+                    img {
+                        width: 100%;
+                    }
+                }
+
+                span {
+                    color: rebeccapurple;
+                    display: block;
+                    opacity: 0;
+                    margin-top: 8px;
+                    animation: fadeIn 1.5s 3s forwards;
+                }
+
+                & .bar {
+                    background: #3c3c3e;
+                    position: relative;
+                    height: 2px;
+                    margin-top: 30px;
+                    opacity: 0;
+                    animation: fadeIn 1.5s 2.5s forwards;
+
+                    &_inner {
+                        width: 0px;
+                        height: 100%;
+                        background: white;
+                        position: absolute;
+                        top: 0;
+                        animation: bar 3s 3s forwards;
+                    }
+                }
+
+                & .subtitle {
+                    color: #f49112;
+                    margin: -18px 0px 40px 0;
+                    opacity: 0;
+                    animation: fadeIn 1.5s 1.5s forwards;
+                }
+            }
+        }
+        
+        // Our little character
+
+        &_character {
+            width: 48px;
+            height: 48px;
+            background: red;
+            background: url('https://s3-us-west-2.amazonaws.com/s.cdpn.io/217233/corridorMainCharacter.gif');
+            position: absolute;
+            top: 216px;
+            left: -16px;
+            z-index: 1;
+            background-position: 0 0;
+            transform: translateY(-50%) translateX($tileSize * ($tilesPerSegment / 2) - 8);
+            transition: all $walkSpeed linear;
+            z-index: 1;
+            pointer-events: none;
+            
+            img {
+                position: absolute;
+                border: 512px solid #0c0c0d;
+                transform: translateY(-685px) translateX(-670px);
+                opacity: 1;
+            }
+        }
+
+        // Intro dialogue
+        
+        &_intro {
+            position: absolute;
+            top: 38px;
+            left: -33px;
+            z-index: 14;
+
+            input {
+                display: none;
+            }
+
+            input[type="radio"]:checked + div {
+                opacity: 1;
+                top: 140px;
+                transition: all 0.5s 0.8s;
+                pointer-events: all;
+
+                label {
+                    opacity: 1;
+                    bottom: -10px;
+                }
+            }
+            
+            input#intro-1[type="radio"]:checked + div {
+                top: 140px;
+                opacity: 0;
+                transition: all 0.5s 0.8s;
+                animation: dialogueIn .5s 9s forwards;
+                pointer-events: all;
+            }
+
+            input#intro-1[type="radio"]:not(:checked) + div {
+                opacity: 0;
+                top: 160px;
+                transition: all 0.5s 0.8s;
+            }
+
+            input[type="radio"]#intro-5:checked + div + input + div {
+                opacity: 0;
+                pointer-events: none !important;
+            }
+            
+            input[type="radio"]#intro-5:checked + div {
+                opacity: 0;
+                animation: showResponse 2s 2s forwards;
+            }
+
+            & .overlay {
+                position: fixed;
+                top: 0 !important;
+                width: 140%;
+                left: 0;
+                opacity: 1;
+                height: 260%;
+                background: #141415;
+                z-index: -1;
+                pointer-events: all;
+                transition: all 4s .7s !important;
+            }
+
+            & .dialogue {
+                position: absolute;
+                top: 160px;
+                opacity: 0;
+                width: 170px;
+                left: 20px;
+                padding: 15px;
+                border-radius: 4px;
+                font-size: 13px;
+                text-align: center;
+                transition: all 0.2s .2s;
+                pointer-events: none;
+                background: white;
+                color: #141415;
+                
+                &.end {
+                    position: absolute;
+                    width: 130px;
+                    left: 0;
+                    text-align: center;
+                    right: 0;
+                    pointer-events: none;
+                    top: 100px !important;
+                    margin: auto;
+                    transform: translateY(140px) translateX(39px);
+                    background: white;
+                    color: #141415;
+                    padding: 8px;
+                    border-radius: 5px;
+                }
+
+                label {    
+                    border-radius: 5px;
+                    position: absolute;
+                    right: -6px;
+                    bottom: -20px;
+                    z-index: 1;
+                    opacity: 0;
+                    cursor: pointer;
+                    transition: all 0.4s 1s;
+
+                    img {
+                        transform: scale(2);
+                        image-rendering: pixelated;
+                    }
+
+                    &:hover {
+                        right: -13px;
+                        background: #66bf60;
+                    }
+                }
+            }
+        }
+        
+        // Viewport
+
+        .viewport {
+            position: relative;
+            z-index: 0;
+            transition: all $walkSpeed linear;
+
+            .level {
+                position: absolute;
+                left: 0;
+                z-index: 1;
+                transform: scale(3);
+                transform-origin: 0 0;
+                image-rendering: pixelated;
+            }
+        }
+
+        &_segment {
+            width: $tileSize * $tilesPerSegment;
+            height: $segmentHeight;
+            border: 0px solid white;
+            float: left;
+            z-index: 1;
+            position: relative;
+            color: white;
+
+            .drip_container {
+                position: relative;
+                top: 80px;
+                display: none;
+                z-index: 10;
+
+                & .drip {
+                    width: 3px;
+                    height: 20px;
+                    background: #81eeef;
+                    position: absolute;
+                    height: 0;
+                    top: 14px;
+                    opacity: 1;
+
+                    @for $i from 1 through 5 {
+                        &:nth-of-type(#{$i}) {
+                            left: random(144) + 0px;
+                            animation: drip 1.25s random(52) / 10 + 0s linear infinite;
+                        }
+                    }
+                }
+            }
+
+            @keyframes drip {
+                0% {height: 0;}
+                2% {height: 6px;}
+                5% {height: 6px;top:14px}
+                22% {top:158px; height:4px;opacity:1;}
+                23%{opacity: 0;height:0px}
+                100%{opacity: 0}
+            }
+
+            & .tiles {
+                & .tile {
+                    width: $tileSize;
+                    height: $tileSize;
+                    float: left;
+                    image-rendering: pixelated;
+                    
+                    // Special tiles
+
+                    &.door {
+                        position: absolute;
+                        top: 92px;
+                        height: 144px;
+                        left: -12px;
+                        width: 60px;
+                        
+                        img {
+                            position: relative;
+                        }
+                    }
+                    
+                    &.beam {
+                        position: absolute;
+                        top: 95px;
+                        height: 108px;
+                    }
+                    
+
+                    &.water {
+                        position: absolute;
+                        top: 107px;
+                        height: 108px;
+                    }
+
+                    &:before {
+                        display: none;
+                        content: ' ';
+                        position: absolute;
+                        width: 4px;
+                        height: 10px;
+                        border-left: 4px solid #e69c69;
+                        border-right: 4px solid #e69c69;
+                        z-index: 1;
+                        left: 67px;
+                        top: 140px;
+                        transition: all 1s linear;
+                    }
+
+                    &:after {
+                        top: -48px;
+                        transition: all 1s linear;
+                        height: 40px !important;
+                        display: block;
+                        overflow: hidden;
+                        pointer-events: none;
+
+                        img {
+                            position: relative;
+                            top: -400px;
+                        }
+                    }
+
+                    img {
+                        width: 100%;
+                        cursor: pointer;
+
+                        &:hover {
+                            -webkit-filter: drop-shadow(2px 0px white) drop-shadow(-2px 0px white) drop-shadow(0px -2px white);
+                        }
+                    }
+
+                    label {
+                        pointer-events: none;
+
+                        .response, 
+                        .forcedResponse, 
+                        .responseSuccess {
+                            display: none;
+                            position: absolute;
+                            width: 130px;
+                            left: 0;
+                            text-align: center;
+                            right: 0;
+                            pointer-events: none;
+                            top: calc(50% - 46px);
+                            margin: auto;
+                            background: white;
+                            color: #141415;
+                            padding: 8px;
+                            border-radius: 5px;
+                        }
+
+                        .forcedResponse {
+                            pointer-events: all !important;
+
+                            label {
+                                border-radius: 5px;
+                                position: absolute;
+                                right: -6px;
+                                cursor: pointer;
+                                bottom: -14px;
+                                transform: scale(2);
+                                z-index: 3;
+                                cursor: pointer;
+                                transition: all 0.4s 1s;
+
+                                &:hover {
+                                    right: -2px;
+                                }
+                            }
+                        }
+                    }
+
+                    &:after {
+                        display: block;
+                        width: $tileSize;
+                        height: $tileSize;
+                        transform: scale(3);
+                        image-rendering: pixelated;
+                        transform-origin: 0 0;
+                    }
+                }
+            }
+            
+            // Game controls
+
+            &__control {
+                div {
+                    position: absolute;
+                    opacity: 0;
+                    pointer-events: none;
+                    border-radius: 4px;
+                    top: 50%;
+                    cursor: pointer;
+
+                    img {
+                        transform: scale(3);
+                        image-rendering: pixelated;
+                        position: relative;
+                        left: 0;
+                        top: 0;
+                        transition: all 0.3s;
+                    }
+                }
+
+                & .forward {
+                    transform: translateY(50px) translateX(-$tileSize);
+                    left: 66px;
+                    transition: all 0.3s 0s;
+
+                    &:hover {
+                        img {
+                            left: 4px;
+                        }
+                    }
+                }
+
+                & .backward {
+                    transform: translateY(50px) translateX(47px);
+                    right: 65px;
+                    transition: all 0.3s .1s;
+
+                    &:hover {
+                        img {
+                            left: -4px;
+                        }
+                    }
+
+                    img {
+                        transform: rotate(180deg) scale(3);
+                    }
+                }
+
+                & .up {
+                    top: 90px !important;
+                    left: 50%;
+                    transform: translateX(-50%) translateY(25px);
+                    transition: all 0.3s .2s;
+
+                    &:hover {
+                        img {
+                            top: -4px;
+                        }
+                    }
+
+                    img {
+                        transform: rotate(-90deg) scale(3);
+                    }
+                }
+
+                & .down {
+                    bottom: 350px !important;
+                    left: 50%;
+                    opacity: 0;
+                    top: auto;
+                    transform: translateX(-50%) translateY(10px);
+                    transition: all 0.3s .2s;
+                    
+                    &:hover {
+                        img {
+                            top: 4px;
+                        }
+                    }
+
+                    img {
+                        transform: rotate(90deg) scale(3);
+                    }
+                }
+            }
+        }
+    }
+}
+
+/* ------------------------------------------------------------------------------------
+
+Calculate the way an animated sprite should be shown from its width and frame count
+then animate the background image
+
+--------------------------------------------------------------------------------------- */
+
+@function walkCycle($frames, $width, $height, $row) {
+
+    $t: 100 / $frames;
+    $o: 0;
+    $p: '';
+
+    @for $i from 1 through $frames {
+        $o: $o + $t;
+        $p: $p + ($o - .1) + '%{background-position:-' + ($i - 1) * $width + 'px ' + $height * ($row - 1) + 'px;}';
+        $p: $p + $o + '%{background-position:-' + $i * $width + 'px ' + $height * ($row - 1) + 'px;}';
+        @if($o != 100) {
+            $p: $p + ($o + .1) + '%{background-position:-' + $i * $width + 'px ' + $height * ($row - 1) + 'px;}';
+        } @else {
+            $o: 100;
+        }
+    }
+
+    $v: '1%{background-position: 0px ' + $height * ($row - 1) + 'px;}' + $p;
+
+    @return unquote($v);
+}
+
+/* ------------------------------------------------------------------------------------------------------
+
+Name: Traverse through scenes
+Description: Makes it incredibly easy to trigger scene changes using the checkbox *hack*
+Instead of doing  input#index39:checked + input + div + div { props }
+
+--------------------------------------------------------------------------------------------------------- */
+
+@mixin traverse($n: 4) {
+    $div: "" !global; // Empty div string
+    $input: "" !global; // Empty input string
+    $input2: "" !global;
+    $input3: "" !global;
+    $input4: "" !global;
+    $label: "" !global; // Empty input string
+    $label2: "" !global;
+    $label3: "" !global;
+    $label4: "" !global;
+    $inputOffset: "+ input " !global;
+
+    // This needs to be made dynamic
+
+    @for $i from 1 through 47 {
+        $input: $input + "+ input " !global;
+        $inputOffset: $inputOffset + "+ input " !global;
+    }
+
+    @for $i from 1 through 35 {
+        $input2: $input2 + "+ input " !global;
+    }
+
+    @for $i from 1 through 23 {
+        $input3: $input3 + "+ input " !global;
+    }
+
+    @for $i from 1 through 11 {
+        $input4: $input4 + "+ input " !global;
+    }
+
+    @for $i from 1 through $columns {
+        @keyframes walk-#{$i} {
+            animation: walkCycle(6, 48, 48, 1);
+        }
+    }
+
+    @for $i from 1 through $n {
+        $div: "+ div" !global;
+        $position: $i !global; // Make this global so we can pass it in to our content
+        $i: $i !global;
+        $label: $label + "+ div " !global;
+
+        @if ($i > 1) {
+            $input: str_slice($input, 0, -9) !global; // Slice out the last input string
+            $input2: str_slice($input2, 0, -9) !global; // Slice out the last input string
+            $input3: str_slice($input3, 0, -9) !global; // Slice out the last input string
+            $input4: str_slice($input4, 0, -9) !global; // Slice out the last input string
+            $label2: $label2 + "+ div " !global;
+        }
+
+        @content;
+    }
+}
+
+/* ------------------------------------------------------------------------------------
+
+When in specified semgent, show the down arrow and the up arrow of the segment below
+
+--------------------------------------------------------------------------------------- */
+
+@mixin moveVerticleOnTile($row, $tile) {
+
+    $totalInputs: $rows * $columns - ($row * $columns - ($columns - $tile));
+    $totalDivs: $row * $columns - ($columns - $tile) + $columns + 2;
+    $id: $row * $columns - ($columns - $tile);
+    $tInput: '';
+    $tDiv: '';
+    $tInputDown: '';
+
+    @for $i from 1 through $totalInputs {
+        $tInput: $tInput + ' + input ';
+    }
+
+    @for $i from 1 through $totalDivs {
+        $tDiv: $tDiv + ' + div ';
+    }
+
+    @for $i from 1 through $totalInputs - $columns {
+        $tInputDown: $tInputDown + ' + input ';
+    }
+
+    .game_segment:nth-of-type(#{$id}) .tile:nth-of-type(14):after {
+        content: url('https://s3-us-west-2.amazonaws.com/s.cdpn.io/217233/corridorLift.png');
+        position: relative;
+        display: block;
+    }
+
+    .game_segment:nth-of-type(#{$id}) .tile:nth-of-type(14):before {
+        display: block;
+    }
+
+    input#indexRow#{$row}-#{$tile}:checked #{$tInput} + div + div + .viewport > .game_segment:nth-of-type(#{$id + $columns})  {
+        & .down {
+            opacity: 1;
+            pointer-events: all;
+            transition: all 0.3s 1.1s;
+            transform: translateX(-50%) translateY(0px);
+        }
+    }
+
+    input#indexRow#{$row + 1}-#{$tile}:checked #{$tInputDown} + div + div + .viewport > .game_segment:nth-of-type(#{$id}) {
+        .tile:nth-of-type(14):after {
+            top :288px;
+        }
+
+        .tile:nth-of-type(14):before {
+            height: 373px;
+        }
+    }
+
+    input#indexRow#{$row + 1}-#{$tile}:checked #{$tInputDown} + div + div + .viewport > .game_segment:nth-of-type(#{$id + $columns}) {
+        & .up {
+            opacity: 1;
+            pointer-events: all;
+             transition: all 0.3s 1.1s;
+            transform: translateX(-50%) translateY(15px);
+        }
+    }
+}
+
+/* ------------------------------------------------------------------------------------
+
+Prevent movement labels showing on specified sement
+
+--------------------------------------------------------------------------------------- */
+
+@mixin makeWallAt($row, $tile) {
+
+    $totalInputs: $rows * $columns - ($row * $columns - ($columns - $tile));
+    $totalDivs: $row * $columns - ($columns - $tile) + $columns + 2;
+    $id: $row * $columns - ($columns - $tile);
+    $tInput: '';
+    $tDiv: '';
+    $tInputBack: '';
+    $tInputDown: '';
+
+    @for $i from 1 through $totalInputs + 1 {
+        $tInput: $tInput + ' + input ';
+    }
+
+    @for $i from 1 through $totalInputs - 1 {
+        $tInputBack: $tInputBack + ' + input ';
+    }
+
+    input#indexRow#{$row}-#{$tile - 1}:checked #{$tInput} + div + div + .viewport > .game_segment:nth-of-type(#{$id})  {
+        & .forward {
+            display: none !important;
+        }
+    }
+
+    input#indexRow#{$row}-#{$tile + 1}:checked #{$tInputBack} + div + div + .viewport > .game_segment:nth-of-type(#{$id})  {
+        & .backward {
+            display: none !important;
+        }
+    }
+}
+
+/* ------------------------------------------------------------------------------------
+
+Compare two inputs then do something
+
+--------------------------------------------------------------------------------------- */
+
+@mixin checkWinCondition($criteria, $criteria2, $result) {
+
+    $totalInputs: 48 + ($gameObjects - $criteria - 2);
+    $tInput: '';
+
+    @for $i from 1 through $totalInputs {
+        $tInput: $tInput + ' + input ';
+    }
+    
+    input#interactiveObject#{$criteria}:checked + input:checked + input:checked #{$tInput} + div + div + div + div + div {
+        opacity: 1;
+        pointer-events: all;
+        & .game_win__inner {
+            opacity: 1;
+        }
+    }
+    
+    input#interactiveObject#{$criteria}:checked + input:checked + input:checked #{$tInput} + div + div + div + div {
+        display: none;
+    }
+    
+    input#interactiveObject#{$criteria}:checked + input:checked + input:checked #{$tInput} + div + div + div {
+        animation: end 2s forwards;
+        .forcedResponse {
+            display: none !important;
+        }
+    }
+}
+
+/* ------------------------------------------------------------------------------------
+
+Compare two inputs then do something
+
+--------------------------------------------------------------------------------------- */
+
+@mixin compare($input, $segment, $tile, $destroy, $waterfall, $plank) {
+
+    $totalInputs: 48 + ($gameObjects - $input - 1);
+    $tInput: '';
+
+    @for $i from 1 through $totalInputs {
+        $tInput: $tInput + ' + input ';
+    }
+
+    input#interactiveObject#{$input}:checked + input:checked #{$tInput} + div + div + div > .game_segment:nth-of-type(#{$segment - 1}) {
+        .game_segment__control {
+            display: block !important;
+
+            .backward, .forward {
+                display: block !important;
+            }
+        }
+    }
+
+    input#interactiveObject#{$input}:checked + input:checked #{$tInput} + div + div + div > .game_segment:nth-of-type(#{$segment + 3}) {
+        .game_segment__control {
+            display: block !important;
+
+            .backward, .forward {
+                display: block !important;
+            }
+        }
+    }
+
+    input#interactiveObject#{$input}:checked + input:checked #{$tInput} + div + div + div > .game_segment:nth-of-type(#{$segment + 1}) {
+        .game_segment__control {
+            display: block !important;
+
+            .forward {
+                display: block !important;
+            }
+
+            .backward {
+                display: block !important;
+            }
+        }
+    }
+    
+    @if($destroy) {
+        input#interactiveObject#{$input}:checked + input #{$tInput} + div + div + div > .game_segment:nth-of-type(#{$segment}) {
+            .tile img {
+                display: none;
+            }
+        }
+
+        input#interactiveObject#{$input}:checked + input #{$tInput} + div + div + div > .game_segment:nth-of-type(#{$segment - 1}) {
+            .game_segment__control {
+                .backward,.forward {
+                    display: block !important;
+
+                }
+            }
+        }
+    }
+
+    input#interactiveObject#{$input}:checked + input:checked #{$tInput} + div + div + div > .game_segment:nth-of-type(#{$segment}) {
+        .game_segment__control {
+            .backward {
+                display: block !important;   
+            }
+        }
+
+        @if($waterfall) {
+            & + div .tiles .tile:nth-of-type(13) {
+                content: url('https://s3-us-west-2.amazonaws.com/s.cdpn.io/217233/waterOff.gif');
+                
+                img {
+                    display: none;
+                }
+            }
+        }
+
+        @if($plank) {
+            & + div .tiles .tile:nth-of-type(13) {
+                content: url('https://s3-us-west-2.amazonaws.com/s.cdpn.io/217233/creepyCorridor-_170.png');
+                img {
+                    display: none;
+                }
+            }
+        }
+    }
+
+    input#interactiveObject#{$input}:checked + input:checked #{$tInput} + div + div + div > .game_segment:nth-of-type(#{$segment}) .tiles .tile:nth-of-type(#{$tile}) {
+        img {
+            display: none;
+        }
+
+        .forcedResponse {
+            display: none;
+        }
+
+        .responseSuccess  {
+            display: block;
+            animation: showResponse 2s forwards;
+        }
+    }
+}
+
+// Show the rain element on specific segment
+
+@mixin makeRainAt($segment) {
+    .viewport .game_segment:nth-of-type(#{$segment}) .drip_container {
+        display: block;
+    }
+}
+
+/* ------------------------------------------------------------------------------------
+
+Create an interactive object
+
+--------------------------------------------------------------------------------------- */
+
+@mixin makeInteractiveObject($reference, $segment, $tile, $force, $animate, $plank) {
+
+    $totalInputs: ($rows * $columns) + ($gameObjects - $reference);
+    $tInput: '';
+
+    @for $i from 1 through $totalInputs {
+        $tInput: $tInput + ' + input ';
+    }
+
+    @if($force) {
+        input#interactiveObject#{$reference}:checked #{$tInput} + div + div + div > .game_segment:nth-of-type(#{$segment + 1}),
+        input#interactiveObject#{$reference}:checked #{$tInput} + div + div + div > .game_segment:nth-of-type(#{$segment - 1}){
+            .game_segment__control {
+                display: none;
+            }
+        }
+    }
+
+    input#interactiveObject#{$reference}:checked #{$tInput} + div + div + div + div .game_inventory__item .item[data-reference="#{$reference}"] {
+        display: block;
+    }
+
+    @if($animate) {
+        input#interactiveObject#{$reference}:checked #{$tInput} + div + div + div {
+            animation: shake 1s forwards; 
+        }
+    }
+
+    input#interactiveObject#{$reference}:checked #{$tInput} + div + div + div > .game_segment:nth-of-type(#{$segment}) .tiles .tile:nth-of-type(#{$tile}) {
+        img {
+            pointer-events: none;
+    
+            &.object {
+                display: none;
+            }
+            
+            &.forced {
+                pointer-events: all;
+            }
+        }
+
+        .response  {
+            display: block;
+            animation: showResponse 2s forwards;
+        }
+
+        .forcedResponse {
+            display: block;
+            animation: forcedResponse 2s forwards;
+        }
+    }
+}
+
+// Check padlock code. The math is floored in this and so its not currently dynamic TODO
+
+@mixin checkCode($one, $two, $three, $segment, $tile) {
+
+    $diff: 2;
+    $diff2: 6; // 13
+    $diff3: 13; // 2
+    $diff4: 3; // 4
+
+    $inputPadlock: '';
+    $inputPadlock2: '';
+    $inputPadlock3: '';
+    $inputPadlock4: '';
+    //7,9,4
+    $totalInputs: 48 + ($gameObjects);
+    $tInput: '';
+
+    @for $i from 1 through $totalInputs {
+        $tInput: $tInput + ' + input ';
+    }
+
+    @for $i from 1 through $diff {
+        $inputPadlock: $inputPadlock + ' + input + span ';
+    }
+
+    @for $i from 1 through $diff2 {
+        $inputPadlock2: $inputPadlock2 + ' + input + span ';
+    }
+
+    @for $i from 1 through $diff3 {
+        $inputPadlock3: $inputPadlock3 + ' + input + span ';
+    }
+
+    @for $i from 1 through $diff4 {
+        $inputPadlock4: $inputPadlock4 + ' + input + span ';
+    }
+
+    input#interactiveObject--lock:not(:checked) + div #{$inputPadlock} + input:checked + span #{$inputPadlock2} + input:checked + span #{$inputPadlock3} + input:checked + span #{$inputPadlock4} + label #{$tInput} + div + div + div .game_segment:nth-of-type(#{$segment}) .tiles .tile:nth-of-type(#{$tile}) {
+        img {
+            display:none;
+        }
+        content: url('https://s3-us-west-2.amazonaws.com/s.cdpn.io/217233/doorUnlocked.png')
+    }
+    
+    input#interactiveObject--lock:not(:checked) + div #{$inputPadlock} + input:checked + span #{$inputPadlock2} + input:checked + span #{$inputPadlock3} + input:checked + span #{$inputPadlock4} + label #{$tInput} + div + div + div .game_segment:nth-of-type(#{$segment}) {
+        .forward,.backward {
+            display: block !important;
+        }
+    }
+    
+     input#interactiveObject--lock:not(:checked) + div #{$inputPadlock} + input:checked + span #{$inputPadlock2} + input:checked + span #{$inputPadlock3} + input:checked + span #{$inputPadlock4} + label #{$tInput} + div + div + div .game_segment:nth-of-type(#{$segment - 1}) {
+        .forward,.backward {
+            display: block !important;
+        }
+    }
+}
+
+@include checkCode(7, 3, 6, 28, 13);
+
+/* ------------------------------------------------------------------------------------
+
+Assign an image/gif at a specific tile
+
+--------------------------------------------------------------------------------------- */
+
+@mixin assignTileAt($segment, $tiles, $id) {
+    @each $tile in $tiles {
+        .game_segment:nth-of-type(#{$segment}) .tiles .tile:nth-of-type(#{$tile}) {
+            content: url($id);
+        }   
+    }
+}
+
+/* ----------------------------------
+
+Init the traverse
+
+------------------------------------- */
+
+$animationIndex: 1;
+
+
+@include traverse($rows * $columns) {
+
+    /* ----------------------------------
+
+    Global scene transitions
+
+    ------------------------------------- */
+
+    $animationRow: floor($position / $columns);
+    $animationIndex: $position - ($animationRow * $columns);
+    $inputMap: $input, $input2, $input3, $input4;
+
+    @for $m from 1 through 4 {
+        input#indexRow#{$m}-#{$i}:checked #{nth($inputMap, $m)} #{$div} {
+            animation: walk-#{$animationIndex} $walkSpeed forwards;
+            //static-#{$animationIndex} 2s $walkSpeed infinite
+            //background-position: 0 48px;
+
+            & + div + div {
+                @if($debug) {
+                    left: (-$tileSize * $tilesPerSegment) * ($i - 1) / 2;
+                        } @else {
+                            left: (-$tileSize * $tilesPerSegment) * ($i - 1);   
+                                }
+
+                @if($debug != true) {
+                    clip-path: circle(140px at ((215px - ($tileSize * $tilesPerSegment)) + (($i - 1) * ($tileSize * $tilesPerSegment))) 212px + $segmentHeight * ($m - 1));
+                }
+
+                @if($debug) {
+                    top: -($segmentHeight *  ($m - 1)) / 2;
+                } @else {
+                    top: -$segmentHeight * ($m - 1);
+                }
+
+            }
+    }
+
+        input#indexRow#{$m}-#{$i}:checked #{nth($inputMap, $m)} #{$div} + div + .viewport > .game_segment:nth-of-type(#{$i + 1 + (($m - 1) * $columns)}) {
+            & .forward {
+                opacity: 1;
+                pointer-events: all;
+                transform: translateY(39px) translateX(-48px);
+                transition: all 0.3s .9s;
+            }
+        }
+
+        input#indexRow#{$m}-#{$i}:checked #{nth($inputMap, $m)} #{$div} + div + .viewport > .game_segment:nth-of-type(#{#{$i + (($m - 1) * $columns)}}) {
+            label {
+                pointer-events: all !important;
+            }
+        }
+
+        input#indexRow#{$m}-#{$i}:checked #{nth($inputMap, $m)} #{$div} + div + .viewport > .game_segment:nth-of-type(#{$i - 1 + (($m - 1) * $columns)}) {
+            & .backward {
+                opacity: 1;
+                pointer-events: all;
+                transform: translateY(39px) translateX(47px);
+                transition: all 0.3s 1s;
+            }
+        }
+    }
+}
+
+// Assign all our animated tiles
+@include assignTileAt(2, 10, 'https://s3-us-west-2.amazonaws.com/s.cdpn.io/217233/spookyEyes.gif');
+@include assignTileAt(19, 10, 'https://s3-us-west-2.amazonaws.com/s.cdpn.io/217233/spookyEyes.gif');
+@include assignTileAt(23, 11, 'https://s3-us-west-2.amazonaws.com/s.cdpn.io/217233/spookyEyes.gif');
+@include assignTileAt(7, 8, 'https://s3-us-west-2.amazonaws.com/s.cdpn.io/217233/spookyEyes.gif');
+@include assignTileAt(5, 17, 'https://s3-us-west-2.amazonaws.com/s.cdpn.io/217233/spookyEyes.gif');
+@include assignTileAt(3, 7, 'https://s3-us-west-2.amazonaws.com/s.cdpn.io/217233/swingingLantern.gif');
+@include assignTileAt(3, 7, 'https://s3-us-west-2.amazonaws.com/s.cdpn.io/217233/swingingLantern.gif');
+@include assignTileAt(6, 8, 'https://s3-us-west-2.amazonaws.com/s.cdpn.io/217233/swingingLantern.gif');
+@include assignTileAt(8, 8, 'https://s3-us-west-2.amazonaws.com/s.cdpn.io/217233/swingingLantern.gif');
+@include assignTileAt(15, 7, 'https://s3-us-west-2.amazonaws.com/s.cdpn.io/217233/swingingLantern.gif');
+@include assignTileAt(18, 7, 'https://s3-us-west-2.amazonaws.com/s.cdpn.io/217233/swingingLantern.gif');
+@include assignTileAt(10, 8, 'https://s3-us-west-2.amazonaws.com/s.cdpn.io/217233/swingingLantern.gif');
+@include assignTileAt(30, 8, 'https://s3-us-west-2.amazonaws.com/s.cdpn.io/217233/swingingLantern.gif');
+@include assignTileAt(27, 8, 'https://s3-us-west-2.amazonaws.com/s.cdpn.io/217233/swingingLantern.gif');
+@include assignTileAt(21, 8, 'https://s3-us-west-2.amazonaws.com/s.cdpn.io/217233/swingingLantern.gif');
+@include assignTileAt(24, 8, 'https://s3-us-west-2.amazonaws.com/s.cdpn.io/217233/swingingLantern.gif');
+@include assignTileAt(44, 8, 'https://s3-us-west-2.amazonaws.com/s.cdpn.io/217233/swingingLantern.gif');
+@include assignTileAt(12, 7, 'https://s3-us-west-2.amazonaws.com/s.cdpn.io/217233/swingingLantern.gif');
+
+// Create objects
+@include makeInteractiveObject(1, 3, 15, false, false, false); // Empy crate
+@include makeInteractiveObject(2, 12, 15, false, false, false); // Pickaxe
+@include makeInteractiveObject(3, 7, 15, true, false, false); // Rock
+@include makeInteractiveObject(4, 8, 15, false, true, false); // Dynamite plunger
+@include makeInteractiveObject(5, 31, 13, true, false, false); // Dynamite door
+@include makeInteractiveObject(6, 18, 15, false, false, false); // Planks
+@include makeInteractiveObject(7, 29, 13, true, false, true); // Plank gap
+@include makeInteractiveObject(8, 6, 13, false, false, false); // Note 1
+@include makeInteractiveObject(9, 10, 13, false, false, false); // Note 2
+@include makeInteractiveObject(10, 29, 15, false, false, false); // Note 3
+@include makeInteractiveObject(11, 27, 13, false, false, false); // Lock door
+@include makeInteractiveObject(12, 26, 13, false, false, false); // Handle
+@include makeInteractiveObject(13, 46, 13, false, false, false); // Cog
+@include makeInteractiveObject(14, 47, 13, false, false, false); // Waterfall
+@include makeInteractiveObject(15, 15, 15, false, false, false); // Dynamite
+@include makeInteractiveObject(16, 48, 15, false, false, false); // Fuses
+@include makeInteractiveObject(17, 24, 15, false, false, false); // End door
+@include makeInteractiveObject(18, 19, 15, false, false, false); // Empty box 1
+@include makeInteractiveObject(19, 22, 15, false, false, false); // Empty box 2
+@include makeInteractiveObject(20, 33, 15, false, false, false); // Empty box 3
+@include makeInteractiveObject(21, 12, 13, false, false, false); // Empty box 4
+@include makeInteractiveObject(22, 44, 13, false, false, false); // Empty box 5
+
+// Compare game logic
+@include compare(2, 7, 15, false,false, false); // Compare pick to rock
+@include compare(4, 31, 13, true,false, false); // Compare plunger to door
+@include compare(6, 29, 13, false,false, true); // Compare planks to gap
+@include compare(12, 46, 13, false,true, false);
+
+// Check win condition
+@include checkWinCondition(15, 16, 17);
+
+// Create vertical tiles
+@include moveVerticleOnTile(1,5); //e.g make elevator between row 1 segment 5 and the tile below it
+@include moveVerticleOnTile(1,11); 
+@include moveVerticleOnTile(2,2);
+@include moveVerticleOnTile(2,8);
+@include moveVerticleOnTile(3,9);
+
+// Create walls
+@include makeWallAt(1,1);
+@include makeWallAt(1,8); // Blocking dynamite plunger
+@include makeWallAt(1,9);
+@include makeWallAt(1,13);
+@include makeWallAt(2,13);
+@include makeWallAt(2,4);
+@include makeWallAt(2,1);
+@include makeWallAt(3,1);
+@include makeWallAt(3,3);
+@include makeWallAt(3,4);
+@include makeWallAt(3,6); // door
+@include makeWallAt(3,10);
+@include makeWallAt(4,7);
+@include makeWallAt(4,13);
+@include makeWallAt(4,11);
+
+// Effects
+@include makeRainAt(3);
+@include makeRainAt(7);
+@include makeRainAt(15);
+@include makeRainAt(29);
+@include makeRainAt(22);
+@include makeRainAt(31);
+@include makeRainAt(47);
+@include makeRainAt(18);
+
+// Animations
+@keyframes showResponse {
+    0% {opacity:1; top: calc(50% - 36px);}
+    70% {opacity: 1;top: calc(50% - 46px);}
+    100% {opacity:0; top: calc(50% - 46px);}
+}
+
+@keyframes forcedResponse {
+    0% {opacity:1; top: calc(50% - 36px);}
+    70% {opacity: 1;top: calc(50% - 46px);}
+    100% {opacity:1; top: calc(50% - 46px);}
+}
+
+@keyframes logo {
+    0%{opacity: 0; transform: scale(0)}
+    100%{opacity: 1; transform: scale(1)}
+}
+
+@keyframes fadeIn {
+    0%{opacity: 0;}
+    100%{opacity: 1;}
+}
+
+@keyframes fadeOut {
+    0%{opacity: 1;}
+    100%{opacity: 0;}
+}
+
+@keyframes bar {
+    0%{width: 0%;}
+    100%{width: 100%;}
+}
+
+@keyframes dialogueIn {
+    0%{opacity: 0;left: 20px;}
+    10%{left: 20px;}
+    20%{left: 0px;}
+    30%{left: 20px;}
+    40%{left: 4px;}
+    50%{left: 18px;}
+    60%{left: 8px;}
+    70%{left: 20px;}
+    80%{left: 5px;}
+    90%{left: 16px;}
+    100%{opacity: 1;left: 20px;}
+}
+
+@keyframes shake {
+    0%{transform: translateX(0px)}
+    10%{transform: translateX(6px)}
+    20%{transform: translateX(-6px)}
+    30%{transform: translateX(6px)}
+    40%{transform: translateX(-6px)}
+    50%{transform: translateX(6px)}
+    60%{transform: translateX(-6px)}
+    70%{transform: translateX(6px)}
+    80%{transform: translateX(-6px)}
+    90%{transform: translateX(6px)}
+    100%{transform: translateX(0px)}
+}
+
+@keyframes end {
+    0%{transform: translateX(0px);opacity:1}
+    10%{transform: translateX(6px)}
+    20%{transform: translateX(-6px)}
+    30%{transform: translateX(6px)}
+    40%{transform: translateX(-6px)}
+    50%{transform: translateX(6px)}
+    60%{transform: translateX(-6px)}
+    70%{transform: translateX(6px)}
+    80%{transform: translateX(-6px)}
+    90%{transform: translateX(6px)}
+    100%{transform: translateX(0px);opacity:0;}
+}
+
+@keyframes shake-debug {
+    0%{transform: translateX(0px) scale(0.5)}
+    10%{transform: translateX(10px) scale(0.5)}
+    20%{transform: translateX(-0px) scale(0.5)}
+    30%{transform: translateX(10px) scale(0.5)}
+    40%{transform: translateX(-10px) scale(0.5)}
+    50%{transform: translateX(10px) scale(0.5)}
+    60%{transform: translateX(-10px) scale(0.5)}
+    70%{transform: translateX(10px) scale(0.5)}
+    80%{transform: translateX(-10px) scale(0.5)}
+    90%{transform: translateX(10px) scale(0.5)}
+    100%{transform: translateX(0px) scale(0.5)}
+}
+
+
+// Trailer
+// Labels are out
