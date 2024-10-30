@@ -1,0 +1,34 @@
+@import url("https://fonts.googleapis.com/css2?family=Monoton&display=swap");
+
+body {
+	align-items: center;
+	display: flex;
+	height: 100vh;
+	justify-content: center;
+	flex-direction: column;
+}
+
+.hidden {
+	display: none !important;
+}
+
+h1 {
+	color: #ff8e40;
+	font-family: "Monoton", sans-serif;
+	font-size: 60px;
+}
+
+.insstruction {
+	font-weigth: 700;
+	font-size: 0.75rem;
+}
+
+.winner {
+	align-items: center;
+	display: flex;
+	height: 100vh;
+	justify-content: center;
+	position: absolute;
+	width: 100vw;
+	z-index: 1;
+}
